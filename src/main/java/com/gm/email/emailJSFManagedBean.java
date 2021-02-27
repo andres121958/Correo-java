@@ -118,39 +118,45 @@ public class emailJSFManagedBean {
             context.addMessage(toValidate.getClientId(context), new FacesMessage(message));
         }
     }
-    
-    public String submitEmail(){
+
+    public String submitEmail() {
         Properties props = null;
         Session session = null;
         MimeMessage message = null;
         Address fromAddress = null;
         Address toAddress = null;
-        
+
         props = new Properties();
         props.put("mail.smtp.auth", "true");
         props.put("mail.smtp.starttls.enable", "true");
         props.put("mail.smtp.host", smtp);
         props.put("mail.smtp.port", port);
-        
+
         session = Session.getInstance(props, new javax.mail.Authenticator() {
-            @Override 
-            protected PasswordAuthentication getPasswordAuthentication(){
+            @Override
+            protected PasswordAuthentication getPasswordAuthentication() {
                 return new PasswordAuthentication(username, password);
             }
-});
+        });
         message = new MimeMessage(session);
         try {
             message.setContent(getDescr(), "text/plain");
             message.setSubject(getSubject());
             fromAddress = new InternetAddress(getFrom());
             message.setFrom(fromAddress);
-            toAddress = new InternetAddress(getTo());
-            message.setRecipient(Message.RecipientType.TO, toAddress);
+            String correos = getTo();
+            String[] correos_destinos = correos.split(";");
+            Address[] receptores = new Address[correos_destinos.length];
+            int j = 0;
+            while (j < correos_destinos.length) {
+                receptores[j] = new InternetAddress(correos_destinos[j]);
+                j++;
+            }
+            message.setRecipients(Message.RecipientType.TO, receptores);
             message.saveChanges();
-            
             Transport transport = session.getTransport("smtp");
             transport.connect(this.smtp, this.port, this.username, this.password);
-            if(!transport.isConnected()){
+            if (!transport.isConnected()) {
                 return "emailFal";
             }
             transport.sendMessage(message, message.getAllRecipients());
@@ -159,5 +165,9 @@ public class emailJSFManagedBean {
             return "emailFal";
         }
         return "emailOk";
+
+        /*toAddress = new InternetAddress(getTo());
+        message.setRecipient(Message.RecipientType.TO, toAddress);
+        message.saveChanges();*/
     }
 }
